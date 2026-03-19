@@ -1,4 +1,4 @@
-# BQ4050 Qt Host
+﻿# BQ4050 Qt Host
 
 这是一个面向 `TI bq4050` 的上位机原型，当前优先支持 `模拟设备连接`，并已切换到 `PySide6` 桌面界面，适合先把数据页、轮询节奏和信息组织方式验证清楚。
 
@@ -45,29 +45,42 @@ conda activate bq4050-qt
 
 ```powershell
 cd D:\bms
-conda run -n bq4050-qt python bq4050_host.py
+python -m bq4050_host
 ```
 
-或者先激活环境再运行：
+如果你要走打包后的脚本入口：
 
 ```powershell
 cd D:\bms
-conda activate bq4050-qt
-python bq4050_host.py
+pip install -e .
+bmbus-host
 ```
 
 ## 测试
 
 ```powershell
 cd D:\bms
-conda run -n bq4050-qt python -m pytest
+python -m pytest
 ```
 
-## 文件
+## 项目结构
 
-- [bq4050_host.py](/D:/bms/bq4050_host.py)
-  - Qt 主界面
-  - 模拟设备数据源
-  - 真实链路占位入口
-- [test_bq4050_host.py](/D:/bms/test_bq4050_host.py)
-  - 模拟数据基本校验
+```text
+D:\bms
+|-- bq4050_host.py
+|-- src\bmbus_host
+|   |-- app.py
+|   |-- core
+|   |   |-- controller.py
+|   |   |-- labels.py
+|   |   `-- models.py
+|   |-- bridges
+|   |   |-- mock.py
+|   |   `-- placeholder.py
+|   `-- ui
+|       |-- main_window.py
+|       |-- theme.py
+|       `-- widgets.py
+`-- tests
+    `-- test_mock_bridge.py
+```

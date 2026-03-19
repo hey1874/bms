@@ -18,8 +18,15 @@ dev = [
 ]
 
 [project.scripts]
-bmbus-host = "bq4050_host:main"
+bmbus-host = "bmbus_host.app:main"
 
 [tool.pytest.ini_options]
 addopts = "-p no:cacheprovider"
-testpaths = ["test_bq4050_host.py"]
+testpaths = ["tests"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["bmbus_host*"]

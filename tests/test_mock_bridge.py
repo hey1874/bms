@@ -1,6 +1,6 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
-from bq4050_host import MockBq4050Bridge
+from bmbus_host.bridges import MockBq4050Bridge
 
 
 def test_mock_bridge_returns_expected_keys() -> None:
