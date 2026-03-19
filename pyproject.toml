@@ -5,11 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "bmbus-host"
 version = "0.1.0"
-description = "PySide6 desktop host prototype for TI BQ4050 with a mock device workflow."
+description = "PySide6 desktop host prototype for TI BQ4050 with mock, TCP, serial, and reserved Bluetooth bridge workflows."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "PySide6>=6.8",
+  "pyserial>=3.5",
 ]
 
 [project.optional-dependencies]
@@ -19,6 +20,7 @@ dev = [
 
 [project.scripts]
 bmbus-host = "bmbus_host.app:main"
+bmbus-bridge-sim = "bmbus_host.bridges.server:main"
 
 [tool.pytest.ini_options]
 addopts = "-p no:cacheprovider"

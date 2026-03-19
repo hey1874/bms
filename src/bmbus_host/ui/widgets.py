@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout
@@ -9,19 +9,19 @@ class StatCard(QFrame):
         super().__init__()
         self.setObjectName("StatCard")
         self.setProperty("accent", accent)
-        self.setMinimumWidth(260)
-        self.setMinimumHeight(140)
+        self.setMinimumWidth(220)
+        self.setMinimumHeight(120)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(12)
+        layout.setContentsMargins(18, 18, 18, 18)
+        layout.setSpacing(10)
 
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(12)
+        header_layout.setSpacing(10)
 
         self.icon_bg = QFrame()
         self.icon_bg.setObjectName("StatIconBg")
-        self.icon_bg.setFixedSize(48, 48)
+        self.icon_bg.setFixedSize(40, 40)
         icon_inner_layout = QVBoxLayout(self.icon_bg)
         icon_inner_layout.setContentsMargins(0, 0, 0, 0)
         icon_inner_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -31,7 +31,7 @@ class StatCard(QFrame):
         icon_inner_layout.addWidget(self.icon_label)
 
         title_layout = QVBoxLayout()
-        title_layout.setSpacing(2)
+        title_layout.setSpacing(1)
         self.title_label = QLabel(title)
         self.title_label.setObjectName("StatTitle")
         self.caption_label = QLabel("等待数据")

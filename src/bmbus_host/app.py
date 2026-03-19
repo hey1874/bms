@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import sys
 
@@ -16,7 +16,9 @@ def main() -> None:
 
     app = QApplication(sys.argv)
     app.setApplicationName("BQ4050 Qt Host")
-    app.setFont(QFont("Segoe UI", 10))
+    font = QFont(app.font())
+    font.setPointSize(10)
+    app.setFont(font)
     window = BQ4050MainWindow()
     window.show()
     sys.exit(app.exec())

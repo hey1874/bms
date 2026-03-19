@@ -1,11 +1,11 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import threading
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
 from bmbus_host.bridges import BridgeProtocol, build_bridge
-from bmbus_host.core.models import LinkKind, SnapshotResult
+from bmbus_host.core.models import BridgeConfig, LinkKind, SnapshotResult
 
 
 class HostController(QObject):
@@ -18,18 +18,26 @@ class HostController(QObject):
     def __init__(self) -> None:
         super().__init__()
         self.bridge: BridgeProtocol | None = None
+        self.bridge_kind: LinkKind | None = None
         self.busy = False
         self.auto_poll = True
         self.poll_interval_s = 1.0
         self.poll_timer = QTimer(self)
         self.poll_timer.timeout.connect(self._poll_tick)
 
-    def connect_bridge(self, kind: LinkKind, auto_poll: bool, poll_interval_s: float) -> None:
+    def connect_bridge(
+        self,
+        kind: LinkKind,
+        config: BridgeConfig,
+        auto_poll: bool,
+        poll_interval_s: float,
+    ) -> None:
         try:
             self.disconnect_bridge(silent=True)
-            bridge = build_bridge(kind)
+            bridge = build_bridge(kind, config)
             bridge.open()
             self.bridge = bridge
+            self.bridge_kind = kind
             self.auto_poll = auto_poll
             self.poll_interval_s = poll_interval_s
             self.status_changed.emit("已连接", "online")
@@ -38,6 +46,7 @@ class HostController(QObject):
             self._sync_polling()
         except Exception as exc:
             self.bridge = None
+            self.bridge_kind = None
             self.status_changed.emit("连接失败", "error")
             self.error.emit(str(exc))
 
@@ -48,6 +57,7 @@ class HostController(QObject):
                 self.bridge.close()
             finally:
                 self.bridge = None
+        self.bridge_kind = None
         self._set_busy(False)
         self.status_changed.emit("未连接", "offline")
         if not silent:

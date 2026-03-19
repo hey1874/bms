@@ -9,27 +9,32 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
+    QFormLayout,
     QFrame,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QScrollArea,
     QSizePolicy,
     QSpacerItem,
+    QSpinBox,
     QSplitter,
+    QStackedWidget,
     QTabWidget,
     QVBoxLayout,
     QWidget,
-    QScrollArea,
 )
 
+from bmbus_host.bridges import MockBridgeServer
 from bmbus_host.core.controller import HostController
 from bmbus_host.core.labels import SECTION_FIELDS, field_label, format_value
-from bmbus_host.core.models import LinkKind, SnapshotResult
+from bmbus_host.core.models import BridgeConfig, LinkKind, SnapshotResult
 from bmbus_host.ui.theme import apply_theme
 from bmbus_host.ui.widgets import DataTable, StatCard
 
@@ -38,10 +43,11 @@ class BQ4050MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("BQ4050 上位机 - BMBus 监控")
-        self.setMinimumSize(1100, 720)
+        self.setMinimumSize(1040, 680)
         self.resize(1360, 860)
 
         self.latest: dict[str, Any] = {}
+        self.local_mock_server: MockBridgeServer | None = None
         self.controller = HostController()
         self.controller.snapshot_ready.connect(self._on_snapshot_ready)
         self.controller.info.connect(self._on_info)
@@ -53,12 +59,19 @@ class BQ4050MainWindow(QMainWindow):
             LinkKind.MOCK: "模拟设备",
             LinkKind.SERIAL: "USB-TTL 串口桥",
             LinkKind.TCP: "WiFi/TCP 桥",
-            LinkKind.BLUETOOTH: "Bluetooth 桥",
+            LinkKind.BLUETOOTH: "Bluetooth 串口桥",
+        }
+        self.transport_notes = {
+            LinkKind.MOCK: "内置模拟设备，无需硬件即可联调。适合先验证界面和轮询节奏。",
+            LinkKind.SERIAL: "适用于 USB-TTL 对接外部 SMBus 桥接板。桥接端需实现同一套 JSON 行协议。",
+            LinkKind.TCP: "适用于 WiFi 或以太网桥。可直接启动本地 TCP 模拟桥验证真实链路路径。",
+            LinkKind.BLUETOOTH: "默认按 Windows 虚拟串口处理，适用于蓝牙 SPP 暴露为 COM 口的桥接端。",
         }
 
         self._build_ui()
         apply_theme(self)
         self._set_status_pill("未连接", "offline")
+        self._on_transport_changed(self.transport_combo.currentIndex())
         self._sync_button_state()
         self._append_log("界面已启动，当前默认使用模拟设备进行联调。")
 
@@ -75,18 +88,14 @@ class BQ4050MainWindow(QMainWindow):
         splitter.setChildrenCollapsible(False)
         splitter.setStyleSheet("QSplitter::handle { background: transparent; }")
 
-        # Sidebar Scroll Area
         sidebar_scroll = QScrollArea()
         sidebar_scroll.setObjectName("SidebarScroll")
         sidebar_scroll.setWidgetResizable(True)
         sidebar_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-        sidebar_scroll.setMinimumWidth(320)
-        sidebar_scroll.setMaximumWidth(450)
-        
-        sidebar_widget = self._build_sidebar()
-        sidebar_scroll.setWidget(sidebar_widget)
+        sidebar_scroll.setMinimumWidth(288)
+        sidebar_scroll.setMaximumWidth(400)
+        sidebar_scroll.setWidget(self._build_sidebar())
 
-        # Content Scroll Area
         content_scroll = QScrollArea()
         content_scroll.setWidgetResizable(True)
         content_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
@@ -96,7 +105,7 @@ class BQ4050MainWindow(QMainWindow):
         splitter.addWidget(content_scroll)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
-        splitter.setSizes([340, 1020])
+        splitter.setSizes([316, 1044])
 
         root_layout.addWidget(splitter)
 
@@ -104,27 +113,27 @@ class BQ4050MainWindow(QMainWindow):
         panel = QFrame()
         panel.setObjectName("Sidebar")
 
-        # Inner layout for scrolling content
         outer_layout = QVBoxLayout(panel)
-        outer_layout.setContentsMargins(12, 12, 12, 12)
+        outer_layout.setContentsMargins(8, 8, 8, 8)
 
         container = QFrame()
         container.setStyleSheet("background: transparent;")
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(12, 16, 12, 16)
-        layout.setSpacing(24)
+        layout.setContentsMargins(10, 12, 10, 12)
+        layout.setSpacing(16)
 
         header_layout = QVBoxLayout()
-        header_layout.setSpacing(8)
+        header_layout.setSpacing(6)
         eyebrow = QLabel("BQ4050 DESKTOP HOST")
         eyebrow.setObjectName("Eyebrow")
 
         title = QLabel("BMBus 监控系统")
         title.setObjectName("SidebarTitle")
 
-        desc = QLabel("高性能电池管理系统桌面端")
+        desc = QLabel("读取模拟设备或外部 SMBus 桥接端，并为 WiFi / Bluetooth 保留统一接入层。")
         desc.setObjectName("SidebarDesc")
-        
+        desc.setWordWrap(True)
+
         header_layout.addWidget(eyebrow)
         header_layout.addWidget(title)
         header_layout.addWidget(desc)
@@ -132,11 +141,18 @@ class BQ4050MainWindow(QMainWindow):
 
         connection_box = QGroupBox("连接配置")
         connection_layout = QVBoxLayout(connection_box)
-        connection_layout.setSpacing(12)
+        connection_layout.setSpacing(10)
 
         self.transport_combo = QComboBox()
-        self.transport_combo.addItems(list(self.transport_labels.values()))
-        self.transport_combo.setCurrentText(self.transport_labels[LinkKind.MOCK])
+        for kind, label in self.transport_labels.items():
+            self.transport_combo.addItem(label, kind)
+        self.transport_combo.currentIndexChanged.connect(self._on_transport_changed)
+
+        self.transport_stack = QStackedWidget()
+        self.transport_stack.addWidget(self._build_mock_page())
+        self.transport_stack.addWidget(self._build_serial_page())
+        self.transport_stack.addWidget(self._build_tcp_page())
+        self.transport_stack.addWidget(self._build_bluetooth_page())
 
         poll_row = QHBoxLayout()
         self.auto_poll_checkbox = QCheckBox("自动轮询")
@@ -153,35 +169,35 @@ class BQ4050MainWindow(QMainWindow):
         self.poll_interval_spin.valueChanged.connect(self._push_poll_settings)
 
         interval_row = QHBoxLayout()
-        interval_label = QLabel("间隔")
-        interval_label.setStyleSheet("color: #9CA3AF; font-size: 13px;")
+        interval_label = QLabel("轮询间隔")
+        interval_label.setObjectName("ConfigHint")
         interval_row.addWidget(interval_label)
         interval_row.addStretch(1)
         interval_row.addWidget(self.poll_interval_spin)
 
         button_row = QHBoxLayout()
-        button_row.setSpacing(10)
-        self.connect_button = QPushButton("连接设备")
+        button_row.setSpacing(8)
+        self.connect_button = QPushButton("连接链路")
         self.connect_button.clicked.connect(self.connect_bridge)
 
         self.disconnect_button = QPushButton("断开")
         self.disconnect_button.setObjectName("GhostButton")
         self.disconnect_button.clicked.connect(self.disconnect_bridge)
-        self.disconnect_button.setFixedWidth(80)
+        self.disconnect_button.setMinimumWidth(84)
 
         button_row.addWidget(self.connect_button, 1)
         button_row.addWidget(self.disconnect_button)
 
         connection_layout.addWidget(QLabel("链路类型"))
         connection_layout.addWidget(self.transport_combo)
+        connection_layout.addWidget(self.transport_stack)
         connection_layout.addLayout(poll_row)
         connection_layout.addLayout(interval_row)
-        connection_layout.addSpacing(4)
         connection_layout.addLayout(button_row)
 
         actions_box = QGroupBox("快操作")
         actions_layout = QVBoxLayout(actions_box)
-        actions_layout.setSpacing(10)
+        actions_layout.setSpacing(8)
 
         self.full_button = QPushButton("同步完整寄存器")
         self.full_button.clicked.connect(lambda: self.controller.request_snapshot(True, "手动完整读取"))
@@ -193,32 +209,149 @@ class BQ4050MainWindow(QMainWindow):
         actions_layout.addWidget(self.full_button)
         actions_layout.addWidget(self.fast_button)
 
-        tips_label = QLabel(
-            "提示: SMBus 协议对时序敏感，在高负载读取时请适当增加轮询间隔以保证链路稳定。"
-        )
-        tips_label.setWordWrap(True)
-        tips_label.setObjectName("TipsLabel")
+        self.transport_note_label = QLabel()
+        self.transport_note_label.setWordWrap(True)
+        self.transport_note_label.setObjectName("TipsLabel")
 
         layout.addWidget(connection_box)
         layout.addWidget(actions_box)
-        layout.addWidget(tips_label)
+        layout.addWidget(self.transport_note_label)
         layout.addStretch(1)
-        
+
         outer_layout.addWidget(container)
         return panel
+
+    def _build_mock_page(self) -> QWidget:
+        page = QFrame()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        hint = QLabel("使用内置模拟设备，不依赖外部桥接端。")
+        hint.setWordWrap(True)
+        hint.setObjectName("ConfigHint")
+        layout.addWidget(hint)
+        return page
+
+    def _build_serial_page(self) -> QWidget:
+        page = QFrame()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        form = QFormLayout()
+        form.setContentsMargins(0, 0, 0, 0)
+        form.setSpacing(6)
+
+        self.serial_port_edit = QLineEdit("COM3")
+        self.serial_baud_spin = QSpinBox()
+        self.serial_baud_spin.setRange(1200, 921600)
+        self.serial_baud_spin.setValue(115200)
+        self.serial_timeout_spin = QDoubleSpinBox()
+        self.serial_timeout_spin.setRange(0.2, 30.0)
+        self.serial_timeout_spin.setValue(2.0)
+        self.serial_timeout_spin.setSuffix(" s")
+
+        form.addRow("串口号", self.serial_port_edit)
+        form.addRow("波特率", self.serial_baud_spin)
+        form.addRow("超时", self.serial_timeout_spin)
+
+        hint = QLabel("桥接端需按一行一个 JSON 的方式响应 hello/read_snapshot 请求。")
+        hint.setWordWrap(True)
+        hint.setObjectName("ConfigHint")
+
+        layout.addLayout(form)
+        layout.addWidget(hint)
+        return page
+
+    def _build_tcp_page(self) -> QWidget:
+        page = QFrame()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        form = QFormLayout()
+        form.setContentsMargins(0, 0, 0, 0)
+        form.setSpacing(6)
+
+        self.tcp_host_edit = QLineEdit("127.0.0.1")
+        self.tcp_port_spin = QSpinBox()
+        self.tcp_port_spin.setRange(1, 65535)
+        self.tcp_port_spin.setValue(8855)
+        self.tcp_timeout_spin = QDoubleSpinBox()
+        self.tcp_timeout_spin.setRange(0.2, 30.0)
+        self.tcp_timeout_spin.setValue(2.0)
+        self.tcp_timeout_spin.setSuffix(" s")
+
+        form.addRow("主机", self.tcp_host_edit)
+        form.addRow("端口", self.tcp_port_spin)
+        form.addRow("超时", self.tcp_timeout_spin)
+
+        sim_row = QHBoxLayout()
+        self.tcp_sim_start_button = QPushButton("启动本地模拟桥")
+        self.tcp_sim_start_button.setObjectName("GhostButton")
+        self.tcp_sim_start_button.clicked.connect(self.start_local_tcp_simulator)
+
+        self.tcp_sim_stop_button = QPushButton("停止")
+        self.tcp_sim_stop_button.setObjectName("GhostButton")
+        self.tcp_sim_stop_button.clicked.connect(self.stop_local_tcp_simulator)
+        self.tcp_sim_stop_button.setMinimumWidth(64)
+
+        sim_row.addWidget(self.tcp_sim_start_button, 1)
+        sim_row.addWidget(self.tcp_sim_stop_button)
+
+        self.tcp_sim_status_label = QLabel("本地模拟桥未启动")
+        self.tcp_sim_status_label.setObjectName("SimStatus")
+        self.tcp_sim_status_label.setWordWrap(True)
+
+        layout.addLayout(form)
+        layout.addLayout(sim_row)
+        layout.addWidget(self.tcp_sim_status_label)
+        return page
+
+    def _build_bluetooth_page(self) -> QWidget:
+        page = QFrame()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        form = QFormLayout()
+        form.setContentsMargins(0, 0, 0, 0)
+        form.setSpacing(6)
+
+        self.bluetooth_port_edit = QLineEdit("COM8")
+        self.bluetooth_baud_spin = QSpinBox()
+        self.bluetooth_baud_spin.setRange(1200, 921600)
+        self.bluetooth_baud_spin.setValue(115200)
+        self.bluetooth_timeout_spin = QDoubleSpinBox()
+        self.bluetooth_timeout_spin.setRange(0.2, 30.0)
+        self.bluetooth_timeout_spin.setValue(2.0)
+        self.bluetooth_timeout_spin.setSuffix(" s")
+
+        form.addRow("虚拟串口", self.bluetooth_port_edit)
+        form.addRow("波特率", self.bluetooth_baud_spin)
+        form.addRow("超时", self.bluetooth_timeout_spin)
+
+        hint = QLabel("当前按蓝牙 SPP 虚拟串口处理；若后续改 BLE GATT，可复用同一桥接协议层。")
+        hint.setWordWrap(True)
+        hint.setObjectName("ConfigHint")
+
+        layout.addLayout(form)
+        layout.addWidget(hint)
+        return page
 
     def _build_content(self) -> QWidget:
         panel = QWidget()
         panel.setObjectName("MainContent")
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(24)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(16)
 
         hero = QFrame()
         hero.setObjectName("Hero")
         hero_layout = QVBoxLayout(hero)
-        hero_layout.setContentsMargins(28, 24, 28, 24)
-        hero_layout.setSpacing(12)
+        hero_layout.setContentsMargins(20, 18, 20, 18)
+        hero_layout.setSpacing(8)
 
         top_row = QHBoxLayout()
         title = QLabel("电池实时摘要")
@@ -244,8 +377,8 @@ class BQ4050MainWindow(QMainWindow):
         layout.addWidget(hero)
 
         cards_layout = QGridLayout()
-        cards_layout.setHorizontalSpacing(16)
-        cards_layout.setVerticalSpacing(16)
+        cards_layout.setHorizontalSpacing(12)
+        cards_layout.setVerticalSpacing(12)
 
         self.card_voltage = StatCard("总压", "VOLT", "blue")
         self.card_current = StatCard("电流", "CURR", "amber")
@@ -262,23 +395,19 @@ class BQ4050MainWindow(QMainWindow):
             self.card_temp,
             self.card_mode,
         ]
-        
-        # Grid items will not squeeze beyond their minimum size
         for index, card in enumerate(cards):
             card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
             cards_layout.addWidget(card, index // 3, index % 3)
         layout.addLayout(cards_layout)
 
-        # Tab + Log split area
         lower_split = QSplitter(Qt.Orientation.Vertical)
-        lower_split.setHandleWidth(12)
+        lower_split.setHandleWidth(8)
         lower_split.setChildrenCollapsible(False)
         lower_split.addWidget(self._build_tabs())
         lower_split.addWidget(self._build_log())
         lower_split.setStretchFactor(0, 3)
         lower_split.setStretchFactor(1, 1)
-        lower_split.setSizes([460, 200])
-        
+        lower_split.setSizes([430, 176])
         layout.addWidget(lower_split, 1)
         return panel
 
@@ -296,8 +425,8 @@ class BQ4050MainWindow(QMainWindow):
         wrapper.setObjectName("LogPanel")
 
         layout = QVBoxLayout(wrapper)
-        layout.setContentsMargins(20, 18, 20, 20)
-        layout.setSpacing(12)
+        layout.setContentsMargins(16, 14, 16, 16)
+        layout.setSpacing(6)
 
         header = QHBoxLayout()
         title = QLabel("运行日志")
@@ -305,8 +434,8 @@ class BQ4050MainWindow(QMainWindow):
 
         clear_button = QPushButton("清空日志")
         clear_button.setObjectName("GhostButton")
-        clear_button.setFixedWidth(80)
-        clear_button.setFixedHeight(32)
+        clear_button.setFixedWidth(72)
+        clear_button.setFixedHeight(28)
         clear_button.setStyleSheet("font-size: 12px; padding: 0;")
 
         header.addWidget(title)
@@ -324,6 +453,7 @@ class BQ4050MainWindow(QMainWindow):
     def connect_bridge(self) -> None:
         self.controller.connect_bridge(
             self._selected_kind(),
+            self._current_bridge_config(),
             self.auto_poll_checkbox.isChecked(),
             self.poll_interval_spin.value(),
         )
@@ -333,10 +463,63 @@ class BQ4050MainWindow(QMainWindow):
         self.controller.disconnect_bridge()
         self._sync_button_state()
 
+    def start_local_tcp_simulator(self) -> None:
+        if self.local_mock_server is not None and self.local_mock_server.is_running:
+            self._append_log("本地 TCP 模拟桥已经在运行。")
+            return
+
+        config = self._current_bridge_config()
+        server = MockBridgeServer(host=config.normalized_tcp_host(), port=config.tcp_port)
+        try:
+            server.start()
+        except Exception as exc:
+            QMessageBox.critical(self, "启动模拟桥失败", str(exc))
+            self._append_log(f"启动本地 TCP 模拟桥失败: {exc}")
+            return
+
+        self.local_mock_server = server
+        self.tcp_host_edit.setText(server.host)
+        self.tcp_port_spin.setValue(server.port)
+        self._append_log(f"本地 TCP 模拟桥已启动: {server.host}:{server.port}")
+        self._update_tcp_simulator_status()
+        self._sync_button_state()
+
+    def stop_local_tcp_simulator(self) -> None:
+        if self.local_mock_server is None:
+            return
+
+        if self.controller.bridge_kind == LinkKind.TCP and self.controller.bridge is not None:
+            self.controller.disconnect_bridge(silent=True)
+
+        self.local_mock_server.stop()
+        self.local_mock_server = None
+        self._append_log("本地 TCP 模拟桥已停止。")
+        self._update_tcp_simulator_status()
+        self._sync_button_state()
+
     def _push_poll_settings(self) -> None:
         self.controller.apply_poll_settings(
             self.auto_poll_checkbox.isChecked(),
             self.poll_interval_spin.value(),
+        )
+
+    def _on_transport_changed(self, index: int) -> None:
+        self.transport_stack.setCurrentIndex(index)
+        kind = self._selected_kind()
+        self.transport_note_label.setText(self.transport_notes[kind])
+        self._update_tcp_simulator_status()
+
+    def _current_bridge_config(self) -> BridgeConfig:
+        return BridgeConfig(
+            serial_port=self.serial_port_edit.text().strip(),
+            serial_baudrate=self.serial_baud_spin.value(),
+            serial_timeout_s=self.serial_timeout_spin.value(),
+            tcp_host=self.tcp_host_edit.text().strip() or "127.0.0.1",
+            tcp_port=self.tcp_port_spin.value(),
+            tcp_timeout_s=self.tcp_timeout_spin.value(),
+            bluetooth_port=self.bluetooth_port_edit.text().strip(),
+            bluetooth_baudrate=self.bluetooth_baud_spin.value(),
+            bluetooth_timeout_s=self.bluetooth_timeout_spin.value(),
         )
 
     def _on_snapshot_ready(self, result: SnapshotResult) -> None:
@@ -373,6 +556,20 @@ class BQ4050MainWindow(QMainWindow):
         self.full_button.setEnabled(connected and (not busy))
         self.fast_button.setEnabled(connected and (not busy))
         self.transport_combo.setEnabled((not connected) and (not busy))
+        self.transport_stack.setEnabled((not connected) and (not busy))
+
+        tcp_running = self.local_mock_server is not None and self.local_mock_server.is_running
+        self.tcp_sim_start_button.setEnabled((not tcp_running) and (not busy))
+        self.tcp_sim_stop_button.setEnabled(tcp_running and (not busy))
+        self._update_tcp_simulator_status()
+
+    def _update_tcp_simulator_status(self) -> None:
+        if self.local_mock_server is not None and self.local_mock_server.is_running:
+            self.tcp_sim_status_label.setText(
+                f"本地模拟桥运行中: {self.local_mock_server.host}:{self.local_mock_server.port}"
+            )
+        else:
+            self.tcp_sim_status_label.setText("本地模拟桥未启动")
 
     def _render_cards(self) -> None:
         voltage_mv = self.latest.get("runtime.pack_voltage_mv")
@@ -435,10 +632,11 @@ class BQ4050MainWindow(QMainWindow):
         )
 
     def _selected_kind(self) -> LinkKind:
-        text = self.transport_combo.currentText()
-        for kind, label in self.transport_labels.items():
-            if label == text:
-                return kind
+        value = self.transport_combo.currentData()
+        if isinstance(value, LinkKind):
+            return value
+        if value is not None:
+            return LinkKind(str(value))
         return LinkKind.MOCK
 
     def _append_log(self, message: str) -> None:
@@ -452,4 +650,7 @@ class BQ4050MainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.controller.disconnect_bridge(silent=True)
+        if self.local_mock_server is not None:
+            self.local_mock_server.stop()
+            self.local_mock_server = None
         super().closeEvent(event)
