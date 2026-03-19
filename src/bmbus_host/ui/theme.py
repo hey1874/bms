@@ -24,9 +24,11 @@ def apply_theme(window: QMainWindow) -> None:
             background: #111827;
             border-radius: 0px;
         }
-        QScrollArea {
+        QScrollArea#SidebarScroll,
+        QScrollArea#SidebarScroll > QWidget,
+        QScrollArea#SidebarScroll > QWidget > QWidget {
+            background: #111827;
             border: none;
-            background: transparent;
         }
         QWidget#MainContent {
             background: #F9FAFB;
@@ -56,6 +58,14 @@ def apply_theme(window: QMainWindow) -> None:
             padding-top: 20px;
             color: #F9FAFB;
             font-weight: 600;
+        }
+        /* 强制 QGroupBox 标题颜色，防止被全局 QWidget 样式覆盖 */
+        QGroupBox::title {
+            color: #F9FAFB;
+            subcontrol-origin: margin;
+            subcontrol-position: top left;
+            padding-left: 10px;
+            padding-top: 10px;
         }
         QFrame#Sidebar QLabel,
         QFrame#Sidebar QCheckBox {

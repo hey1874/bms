@@ -77,6 +77,7 @@ class BQ4050MainWindow(QMainWindow):
 
         # Sidebar Scroll Area
         sidebar_scroll = QScrollArea()
+        sidebar_scroll.setObjectName("SidebarScroll")
         sidebar_scroll.setWidgetResizable(True)
         sidebar_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
         sidebar_scroll.setMinimumWidth(320)
