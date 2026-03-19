@@ -14,19 +14,23 @@ def apply_theme(window: QMainWindow) -> None:
         QWidget {
             background: #F9FAFB;
             color: #111827;
-            font-size: 13px;
+            font-size: 12px;
+        }
+        QLabel,
+        QCheckBox {
+            background: transparent;
         }
         QMainWindow {
             background: #F9FAFB;
         }
         QFrame#Sidebar {
-            background: #111827;
+            background: #0F172A;
             border-radius: 0px;
         }
         QScrollArea#SidebarScroll,
         QScrollArea#SidebarScroll > QWidget,
         QScrollArea#SidebarScroll > QWidget > QWidget {
-            background: #111827;
+            background: #0F172A;
             border: none;
         }
         QWidget#MainContent {
@@ -41,25 +45,25 @@ def apply_theme(window: QMainWindow) -> None:
         }
         QLabel#SidebarTitle {
             color: #F9FAFB;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
         }
         QLabel#SidebarDesc, QLabel#TipsLabel {
-            color: #9CA3AF;
-            line-height: 1.45;
-            font-size: 12px;
+            color: #94A3B8;
+            line-height: 1.4;
+            font-size: 11px;
         }
         QLabel#ConfigHint, QLabel#SimStatus {
-            color: #9CA3AF;
-            font-size: 11px;
+            color: #94A3B8;
+            font-size: 10px;
             line-height: 1.4;
         }
         QFrame#Sidebar QGroupBox {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            margin-top: 10px;
-            padding-top: 16px;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-top: 8px;
+            padding-top: 14px;
             color: #F9FAFB;
             font-weight: 600;
         }
@@ -80,10 +84,10 @@ def apply_theme(window: QMainWindow) -> None:
         QFrame#Sidebar QDoubleSpinBox {
             background: rgba(255, 255, 255, 0.07);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 7px;
-            padding: 4px 8px;
+            border-radius: 5px;
+            padding: 3px 8px;
             color: #F9FAFB;
-            min-height: 30px;
+            min-height: 28px;
         }
         QFrame#Sidebar QStackedWidget,
         QFrame#Sidebar QStackedWidget QWidget,
@@ -99,26 +103,26 @@ def apply_theme(window: QMainWindow) -> None:
         }
         QPushButton {
             border: none;
-            border-radius: 8px;
-            padding: 8px 12px;
-            min-height: 36px;
-            background: #3B82F6;
+            border-radius: 6px;
+            padding: 6px 10px;
+            min-height: 34px;
+            background: #2563EB;
             color: #FFFFFF;
             font-weight: 600;
         }
         QPushButton:hover {
-            background: #2563EB;
+            background: #1D4ED8;
         }
         QPushButton:pressed {
-            background: #1D4ED8;
+            background: #1E40AF;
         }
         QPushButton:disabled {
             background: #E5E7EB;
             color: #9CA3AF;
         }
         QFrame#Sidebar QPushButton {
-            min-height: 38px;
-            padding: 0 12px;
+            min-height: 34px;
+            padding: 0 10px;
         }
         QFrame#Sidebar QPushButton:disabled {
             background: rgba(255, 255, 255, 0.06);
@@ -141,26 +145,26 @@ def apply_theme(window: QMainWindow) -> None:
         }
         QFrame#Hero {
             background: #FFFFFF;
-            border-radius: 18px;
+            border-radius: 12px;
             border: 1px solid #E5E7EB;
         }
         QLabel#HeroTitle {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             color: #111827;
         }
         QLabel#HeroSummary {
-            font-size: 14px;
+            font-size: 13px;
             color: #4B5563;
         }
         QLabel#UpdatedLabel {
             color: #9CA3AF;
-            font-size: 11px;
+            font-size: 10px;
         }
         QLabel#StatusPill {
-            border-radius: 10px;
-            padding: 3px 10px;
-            font-size: 11px;
+            border-radius: 8px;
+            padding: 2px 8px;
+            font-size: 10px;
             font-weight: 600;
         }
         QLabel#StatusPill[state="offline"] {
@@ -177,70 +181,70 @@ def apply_theme(window: QMainWindow) -> None:
         }
         QFrame#StatCard {
             background: #FFFFFF;
-            border-radius: 18px;
+            border-radius: 12px;
             border: 1px solid #E5E7EB;
         }
         QFrame#StatIconBg {
-            border-radius: 10px;
+            border-radius: 8px;
         }
         QFrame#StatCard[accent="blue"] QFrame#StatIconBg {
             background: #EFF6FF;
         }
         QFrame#StatCard[accent="blue"] QLabel#StatIcon {
-            color: #3B82F6;
+            color: #2563EB;
         }
         QFrame#StatCard[accent="amber"] QFrame#StatIconBg {
             background: #FFFBEB;
         }
         QFrame#StatCard[accent="amber"] QLabel#StatIcon {
-            color: #D97706;
+            color: #B45309;
         }
         QFrame#StatCard[accent="green"] QFrame#StatIconBg {
             background: #F0FDF4;
         }
         QFrame#StatCard[accent="green"] QLabel#StatIcon {
-            color: #10B981;
+            color: #059669;
         }
         QFrame#StatCard[accent="slate"] QFrame#StatIconBg {
             background: #F8FAFC;
         }
         QFrame#StatCard[accent="slate"] QLabel#StatIcon {
-            color: #64748B;
+            color: #475569;
         }
         QLabel#StatIcon {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 800;
         }
         QLabel#StatTitle {
             color: #111827;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
         }
         QLabel#StatCaption {
             color: #6B7280;
-            font-size: 11px;
+            font-size: 10px;
         }
         QLabel#StatValue {
             color: #111827;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
         }
         QTabWidget::pane {
             border: 1px solid #E5E7EB;
-            border-radius: 18px;
+            border-radius: 12px;
             background: #FFFFFF;
             top: -1px;
         }
         QTabBar::tab {
             background: transparent;
             color: #6B7280;
-            padding: 8px 16px;
+            padding: 7px 14px;
             font-weight: 600;
             border-bottom: 2px solid transparent;
         }
         QTabBar::tab:selected {
-            color: #3B82F6;
-            border-bottom: 2px solid #3B82F6;
+            color: #2563EB;
+            border-bottom: 2px solid #2563EB;
         }
         QTableWidget {
             background: #FFFFFF;
@@ -252,30 +256,30 @@ def apply_theme(window: QMainWindow) -> None:
             background: #FFFFFF;
             color: #6B7280;
             border: none;
-            padding: 9px;
+            padding: 8px;
             font-weight: 600;
             border-bottom: 1px solid #F3F4F6;
             text-transform: uppercase;
-            font-size: 10px;
+            font-size: 9px;
             letter-spacing: 0.5px;
         }
         QFrame#LogPanel {
             background: #FFFFFF;
             border: 1px solid #E5E7EB;
-            border-radius: 18px;
+            border-radius: 12px;
         }
         QLabel#SectionTitle {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             color: #111827;
         }
         QPlainTextEdit {
             background: #0F172A;
             color: #E2E8F0;
-            border-radius: 12px;
-            padding: 10px;
+            border-radius: 8px;
+            padding: 8px;
             font-family: "Cascadia Code", "Consolas", monospace;
-            font-size: 12px;
+            font-size: 11px;
         }
         """
     )

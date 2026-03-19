@@ -43,8 +43,8 @@ class BQ4050MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("BQ4050 上位机 - BMBus 监控")
-        self.setMinimumSize(1040, 680)
-        self.resize(1360, 860)
+        self.setMinimumSize(980, 640)
+        self.resize(1280, 820)
 
         self.latest: dict[str, Any] = {}
         self.local_mock_server: MockBridgeServer | None = None
@@ -92,8 +92,8 @@ class BQ4050MainWindow(QMainWindow):
         sidebar_scroll.setObjectName("SidebarScroll")
         sidebar_scroll.setWidgetResizable(True)
         sidebar_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-        sidebar_scroll.setMinimumWidth(288)
-        sidebar_scroll.setMaximumWidth(400)
+        sidebar_scroll.setMinimumWidth(272)
+        sidebar_scroll.setMaximumWidth(360)
         sidebar_scroll.setWidget(self._build_sidebar())
 
         content_scroll = QScrollArea()
@@ -105,7 +105,7 @@ class BQ4050MainWindow(QMainWindow):
         splitter.addWidget(content_scroll)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
-        splitter.setSizes([316, 1044])
+        splitter.setSizes([292, 988])
 
         root_layout.addWidget(splitter)
 
@@ -114,16 +114,16 @@ class BQ4050MainWindow(QMainWindow):
         panel.setObjectName("Sidebar")
 
         outer_layout = QVBoxLayout(panel)
-        outer_layout.setContentsMargins(8, 8, 8, 8)
+        outer_layout.setContentsMargins(6, 6, 6, 6)
 
         container = QFrame()
         container.setStyleSheet("background: transparent;")
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(10, 12, 10, 12)
-        layout.setSpacing(16)
+        layout.setContentsMargins(8, 10, 8, 10)
+        layout.setSpacing(12)
 
         header_layout = QVBoxLayout()
-        header_layout.setSpacing(6)
+        header_layout.setSpacing(4)
         eyebrow = QLabel("BQ4050 DESKTOP HOST")
         eyebrow.setObjectName("Eyebrow")
 
@@ -141,7 +141,7 @@ class BQ4050MainWindow(QMainWindow):
 
         connection_box = QGroupBox("连接配置")
         connection_layout = QVBoxLayout(connection_box)
-        connection_layout.setSpacing(10)
+        connection_layout.setSpacing(8)
 
         self.transport_combo = QComboBox()
         for kind, label in self.transport_labels.items():
@@ -176,14 +176,14 @@ class BQ4050MainWindow(QMainWindow):
         interval_row.addWidget(self.poll_interval_spin)
 
         button_row = QHBoxLayout()
-        button_row.setSpacing(8)
+        button_row.setSpacing(6)
         self.connect_button = QPushButton("连接链路")
         self.connect_button.clicked.connect(self.connect_bridge)
 
         self.disconnect_button = QPushButton("断开")
         self.disconnect_button.setObjectName("GhostButton")
         self.disconnect_button.clicked.connect(self.disconnect_bridge)
-        self.disconnect_button.setMinimumWidth(84)
+        self.disconnect_button.setMinimumWidth(76)
 
         button_row.addWidget(self.connect_button, 1)
         button_row.addWidget(self.disconnect_button)
@@ -197,7 +197,7 @@ class BQ4050MainWindow(QMainWindow):
 
         actions_box = QGroupBox("快操作")
         actions_layout = QVBoxLayout(actions_box)
-        actions_layout.setSpacing(8)
+        actions_layout.setSpacing(4)
 
         self.full_button = QPushButton("同步完整寄存器")
         self.full_button.clicked.connect(lambda: self.controller.request_snapshot(True, "手动完整读取"))
@@ -225,7 +225,7 @@ class BQ4050MainWindow(QMainWindow):
         page = QFrame()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(4)
 
         hint = QLabel("使用内置模拟设备，不依赖外部桥接端。")
         hint.setWordWrap(True)
@@ -237,11 +237,11 @@ class BQ4050MainWindow(QMainWindow):
         page = QFrame()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(4)
 
         form = QFormLayout()
         form.setContentsMargins(0, 0, 0, 0)
-        form.setSpacing(6)
+        form.setSpacing(4)
 
         self.serial_port_edit = QLineEdit("COM3")
         self.serial_baud_spin = QSpinBox()
@@ -268,11 +268,11 @@ class BQ4050MainWindow(QMainWindow):
         page = QFrame()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(4)
 
         form = QFormLayout()
         form.setContentsMargins(0, 0, 0, 0)
-        form.setSpacing(6)
+        form.setSpacing(4)
 
         self.tcp_host_edit = QLineEdit("127.0.0.1")
         self.tcp_port_spin = QSpinBox()
@@ -313,11 +313,11 @@ class BQ4050MainWindow(QMainWindow):
         page = QFrame()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(4)
 
         form = QFormLayout()
         form.setContentsMargins(0, 0, 0, 0)
-        form.setSpacing(6)
+        form.setSpacing(4)
 
         self.bluetooth_port_edit = QLineEdit("COM8")
         self.bluetooth_baud_spin = QSpinBox()
@@ -344,14 +344,14 @@ class BQ4050MainWindow(QMainWindow):
         panel = QWidget()
         panel.setObjectName("MainContent")
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(16)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
 
         hero = QFrame()
         hero.setObjectName("Hero")
         hero_layout = QVBoxLayout(hero)
-        hero_layout.setContentsMargins(20, 18, 20, 18)
-        hero_layout.setSpacing(8)
+        hero_layout.setContentsMargins(16, 14, 16, 14)
+        hero_layout.setSpacing(6)
 
         top_row = QHBoxLayout()
         title = QLabel("电池实时摘要")
@@ -377,8 +377,8 @@ class BQ4050MainWindow(QMainWindow):
         layout.addWidget(hero)
 
         cards_layout = QGridLayout()
-        cards_layout.setHorizontalSpacing(12)
-        cards_layout.setVerticalSpacing(12)
+        cards_layout.setHorizontalSpacing(10)
+        cards_layout.setVerticalSpacing(10)
 
         self.card_voltage = StatCard("总压", "VOLT", "blue")
         self.card_current = StatCard("电流", "CURR", "amber")
@@ -401,13 +401,13 @@ class BQ4050MainWindow(QMainWindow):
         layout.addLayout(cards_layout)
 
         lower_split = QSplitter(Qt.Orientation.Vertical)
-        lower_split.setHandleWidth(8)
+        lower_split.setHandleWidth(6)
         lower_split.setChildrenCollapsible(False)
         lower_split.addWidget(self._build_tabs())
         lower_split.addWidget(self._build_log())
         lower_split.setStretchFactor(0, 3)
         lower_split.setStretchFactor(1, 1)
-        lower_split.setSizes([430, 176])
+        lower_split.setSizes([418, 162])
         layout.addWidget(lower_split, 1)
         return panel
 
@@ -425,8 +425,8 @@ class BQ4050MainWindow(QMainWindow):
         wrapper.setObjectName("LogPanel")
 
         layout = QVBoxLayout(wrapper)
-        layout.setContentsMargins(16, 14, 16, 16)
-        layout.setSpacing(6)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(5)
 
         header = QHBoxLayout()
         title = QLabel("运行日志")
@@ -434,9 +434,9 @@ class BQ4050MainWindow(QMainWindow):
 
         clear_button = QPushButton("清空日志")
         clear_button.setObjectName("GhostButton")
-        clear_button.setFixedWidth(72)
-        clear_button.setFixedHeight(28)
-        clear_button.setStyleSheet("font-size: 12px; padding: 0;")
+        clear_button.setFixedWidth(64)
+        clear_button.setFixedHeight(26)
+        clear_button.setStyleSheet("font-size: 11px; padding: 0 8px;")
 
         header.addWidget(title)
         header.addStretch(1)
