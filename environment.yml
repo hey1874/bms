@@ -1,0 +1,7 @@
+name: bq4050-qt
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pyside6
+  - pytest

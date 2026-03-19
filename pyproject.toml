@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bmbus-host"
+version = "0.1.0"
+description = "PySide6 desktop host prototype for TI BQ4050 with a mock device workflow."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "PySide6>=6.8",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[project.scripts]
+bmbus-host = "bq4050_host:main"
+
+[tool.pytest.ini_options]
+addopts = "-p no:cacheprovider"
+testpaths = ["test_bq4050_host.py"]
