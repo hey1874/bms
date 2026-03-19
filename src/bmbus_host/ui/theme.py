@@ -22,7 +22,14 @@ def apply_theme(window: QMainWindow) -> None:
         }
         QFrame#Sidebar {
             background: #111827;
-            border-radius: 24px;
+            border-radius: 0px;
+        }
+        QScrollArea {
+            border: none;
+            background: transparent;
+        }
+        QWidget#MainContent {
+            background: #F9FAFB;
         }
         QLabel#Eyebrow {
             color: #6B7280;

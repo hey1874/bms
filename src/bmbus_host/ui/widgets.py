@@ -9,6 +9,8 @@ class StatCard(QFrame):
         super().__init__()
         self.setObjectName("StatCard")
         self.setProperty("accent", accent)
+        self.setMinimumWidth(260)
+        self.setMinimumHeight(140)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)

@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
+    QScrollArea,
 )
 
 from bmbus_host.core.controller import HostController
@@ -36,7 +37,8 @@ from bmbus_host.ui.widgets import DataTable, StatCard
 class BQ4050MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("BQ4050 上位机")
+        self.setWindowTitle("BQ4050 上位机 - BMBus 监控")
+        self.setMinimumSize(1100, 720)
         self.resize(1360, 860)
 
         self.latest: dict[str, Any] = {}
@@ -65,23 +67,50 @@ class BQ4050MainWindow(QMainWindow):
         self.setCentralWidget(central)
 
         root_layout = QHBoxLayout(central)
-        root_layout.setContentsMargins(20, 20, 20, 20)
-        root_layout.setSpacing(20)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setHandleWidth(1)
         splitter.setChildrenCollapsible(False)
-        splitter.addWidget(self._build_sidebar())
-        splitter.addWidget(self._build_content())
-        splitter.setSizes([340, 960])
+        splitter.setStyleSheet("QSplitter::handle { background: transparent; }")
+
+        # Sidebar Scroll Area
+        sidebar_scroll = QScrollArea()
+        sidebar_scroll.setWidgetResizable(True)
+        sidebar_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        sidebar_scroll.setMinimumWidth(320)
+        sidebar_scroll.setMaximumWidth(450)
+        
+        sidebar_widget = self._build_sidebar()
+        sidebar_scroll.setWidget(sidebar_widget)
+
+        # Content Scroll Area
+        content_scroll = QScrollArea()
+        content_scroll.setWidgetResizable(True)
+        content_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        content_scroll.setWidget(self._build_content())
+
+        splitter.addWidget(sidebar_scroll)
+        splitter.addWidget(content_scroll)
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([340, 1020])
+
         root_layout.addWidget(splitter)
 
     def _build_sidebar(self) -> QWidget:
         panel = QFrame()
         panel.setObjectName("Sidebar")
-        panel.setMinimumWidth(320)
 
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(24, 28, 24, 28)
+        # Inner layout for scrolling content
+        outer_layout = QVBoxLayout(panel)
+        outer_layout.setContentsMargins(12, 12, 12, 12)
+
+        container = QFrame()
+        container.setStyleSheet("background: transparent;")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(12, 16, 12, 16)
         layout.setSpacing(24)
 
         header_layout = QVBoxLayout()
@@ -173,13 +202,16 @@ class BQ4050MainWindow(QMainWindow):
         layout.addWidget(actions_box)
         layout.addWidget(tips_label)
         layout.addStretch(1)
+        
+        outer_layout.addWidget(container)
         return panel
 
     def _build_content(self) -> QWidget:
         panel = QWidget()
+        panel.setObjectName("MainContent")
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(20)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(24)
 
         hero = QFrame()
         hero.setObjectName("Hero")
@@ -229,15 +261,23 @@ class BQ4050MainWindow(QMainWindow):
             self.card_temp,
             self.card_mode,
         ]
+        
+        # Grid items will not squeeze beyond their minimum size
         for index, card in enumerate(cards):
+            card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
             cards_layout.addWidget(card, index // 3, index % 3)
         layout.addLayout(cards_layout)
 
+        # Tab + Log split area
         lower_split = QSplitter(Qt.Orientation.Vertical)
+        lower_split.setHandleWidth(12)
         lower_split.setChildrenCollapsible(False)
         lower_split.addWidget(self._build_tabs())
         lower_split.addWidget(self._build_log())
-        lower_split.setSizes([460, 240])
+        lower_split.setStretchFactor(0, 3)
+        lower_split.setStretchFactor(1, 1)
+        lower_split.setSizes([460, 200])
+        
         layout.addWidget(lower_split, 1)
         return panel
 
