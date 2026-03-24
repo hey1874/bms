@@ -10,6 +10,7 @@ class LinkKind(StrEnum):
     SERIAL = "serial"
     TCP = "tcp"
     BLUETOOTH = "bluetooth"
+    FT4232 = "ft4232"
 
 
 @dataclass(slots=True)
@@ -29,6 +30,7 @@ class BridgeConfig:
     bluetooth_port: str = "COM8"
     bluetooth_baudrate: int = 115200
     bluetooth_timeout_s: float = 2.0
+    ftdi_url: str = "ftdi://ftdi:4232/1"
 
     def normalized_tcp_host(self) -> str:
         host = self.tcp_host.strip()

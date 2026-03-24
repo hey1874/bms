@@ -8,7 +8,7 @@ from .mock import MockBq4050Bridge
 from .serial import BluetoothSerialBridge, SerialJsonBridge
 from .server import MockBridgeServer
 from .tcp import TcpJsonBridge
-
+from .ftdi import Ft4232Bridge
 
 class BridgeProtocol(Protocol):
     @property
@@ -24,6 +24,10 @@ class BridgeProtocol(Protocol):
 def build_bridge(kind: LinkKind, config: BridgeConfig) -> BridgeProtocol:
     if kind == LinkKind.MOCK:
         return MockBq4050Bridge()
+    if kind == LinkKind.FT4232:
+        # Default to port 1, users can customize in the config later if needed
+        ftdi_url = getattr(config, "ftdi_url", "ftdi://ftdi:4232/1")
+        return Ft4232Bridge(url=ftdi_url)
     if kind == LinkKind.SERIAL:
         return SerialJsonBridge(
             port=config.normalized_serial_port(),
@@ -43,5 +47,6 @@ __all__ = [
     "MockBridgeServer",
     "SerialJsonBridge",
     "TcpJsonBridge",
+    "Ft4232Bridge",
     "build_bridge",
 ]

@@ -42,7 +42,8 @@ class HostController(QObject):
             self.poll_interval_s = poll_interval_s
             self.status_changed.emit("已连接", "online")
             self.info.emit(f"已连接到 {bridge.label}")
-            self.request_snapshot(full=True, label="连接后首次读取")
+            if not getattr(self.bridge, "is_streaming", False):
+                self.request_snapshot(full=True, label="连接后首次读取")
             self._sync_polling()
         except Exception as exc:
             self.bridge = None
@@ -97,10 +98,39 @@ class HostController(QObject):
         self.request_snapshot(full=False, label="自动轮询")
 
     def _sync_polling(self) -> None:
-        if self.bridge is None or not self.auto_poll:
+        if self.bridge is None:
+            self.poll_timer.stop()
+            return
+
+        is_streaming = getattr(self.bridge, "is_streaming", False)
+        if is_streaming:
+            self.poll_timer.stop()
+            self._start_stream_worker()
+            return
+
+        if not self.auto_poll:
             self.poll_timer.stop()
             return
         self.poll_timer.start(max(200, int(self.poll_interval_s * 1000)))
+
+    def _start_stream_worker(self) -> None:
+        bridge_ref = self.bridge
+
+        def worker() -> None:
+            while self.bridge is bridge_ref and bridge_ref is not None:
+                try:
+                    payload = bridge_ref.read_snapshot(full=False)
+                    self.snapshot_ready.emit(SnapshotResult("自动更新", payload))
+                    self.status_changed.emit("已连接", "online")
+                except Exception as exc:
+                    # In stream mode, we can just ignore timeouts and keep reading
+                    if "超时" in str(exc):
+                        continue
+                    self.status_changed.emit("读取失败", "error")
+                    self.error.emit(f"自动更新失败: {exc}")
+                    break
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _set_busy(self, busy: bool) -> None:
         if self.busy == busy:
