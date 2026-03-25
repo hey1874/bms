@@ -55,23 +55,23 @@ ApplicationWindow {
 
         // Sidebar
         Rectangle {
-            SplitView.preferredWidth: 320
-            SplitView.minimumWidth: 280
-            SplitView.maximumWidth: 460
+            SplitView.preferredWidth: 276
+            SplitView.minimumWidth: 244
+            SplitView.maximumWidth: 340
             color: "#1e293b" // Slate 800
 
             ScrollView {
                 anchors.fill: parent
-                anchors.margins: 16
+                anchors.margins: 12
                 contentWidth: availableWidth
                 clip: true
 
                 ColumnLayout {
                     width: parent.width
-                    spacing: 20
+                    spacing: 12
 
                     ColumnLayout {
-                        spacing: 4
+                        spacing: 2
                         Label {
                             text: "BQ4050 DESKTOP HOST"
                             color: "#94a3b8" // Slate 400
@@ -81,13 +81,13 @@ ApplicationWindow {
                         Label {
                             text: "BMBus 监控系统"
                             color: "white"
-                            font.pixelSize: 20
+                            font.pixelSize: 17
                             font.bold: true
                         }
                         Label {
-                            text: "读取模拟设备或外部 SMBus 桥接端，并为 WiFi / Bluetooth 保留统一接入层。"
+                            text: "连接模拟设备或外部 SMBus 桥接端。"
                             color: "#cbd5e1" // Slate 300
-                            font.pixelSize: 13
+                            font.pixelSize: 11
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
                         }
@@ -96,7 +96,7 @@ ApplicationWindow {
                     // Connection Config Group
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: connectionCol.implicitHeight + 24
+                        Layout.preferredHeight: connectionCol.implicitHeight + 20
                         color: "#0f172a"
                         radius: 8
                         border.color: "#334155"
@@ -104,8 +104,8 @@ ApplicationWindow {
                         ColumnLayout {
                             id: connectionCol
                             anchors.fill: parent
-                            anchors.margins: 12
-                            spacing: 12
+                            anchors.margins: 10
+                            spacing: 10
 
                             Label {
                                 text: "连接配置"
@@ -116,8 +116,9 @@ ApplicationWindow {
                             ComboBox {
                                 id: transportCombo
                                 Layout.fillWidth: true
-                                model: ["模拟设备 (mock)", "USB-TTL 串口桥 (serial)", "WiFi/TCP 桥 (tcp)", "Bluetooth 串口桥 (bluetooth)", "FT4232 直连 (ft4232)"]
+                                model: ["模拟", "USB-TTL", "TCP", "蓝牙", "FT4232"]
                                 enabled: !AppModel.isConnected && !AppModel.isBusy
+                                font.pixelSize: 12
                             }
 
                             StackLayout {
@@ -129,17 +130,17 @@ ApplicationWindow {
                                 // 0: Mock
                                 ColumnLayout {
                                     Label {
-                                        text: "使用内置模拟设备，无需外部硬件"
+                                        text: "内置模拟设备"
                                         color: "#94a3b8"
-                                        font.pixelSize: 12
+                                        font.pixelSize: 11
                                     }
                                 }
 
                                 // 1: Serial
                                 GridLayout {
                                     columns: 2
-                                    rowSpacing: 8
-                                    Label { text: "串口号"; color: "#cbd5e1" }
+                                    rowSpacing: 6
+                                    Label { text: "串口"; color: "#cbd5e1" }
                                     ComboBox {
                                         id: serialPortEdit
                                         editable: true
@@ -150,9 +151,9 @@ ApplicationWindow {
                                             if (pressed) model = AppModel.getSerialPorts()
                                         }
                                     }
-                                    Label { text: "波特率"; color: "#cbd5e1" }
+                                    Label { text: "波特"; color: "#cbd5e1" }
                                     SpinBox { id: serialBaudSpin; value: 115200; from: 1200; to: 921600; stepSize: 9600; Layout.fillWidth: true }
-                                    Label { text: "超时 (s)"; color: "#cbd5e1" }
+                                    Label { text: "超时"; color: "#cbd5e1" }
                                     TextField { id: serialTimeoutEdit; text: "2.0"; Layout.fillWidth: true }
                                 }
 
@@ -161,17 +162,17 @@ ApplicationWindow {
                                     spacing: 8
                                     GridLayout {
                                         columns: 2
-                                        rowSpacing: 8
+                                        rowSpacing: 6
                                         Label { text: "主机"; color: "#cbd5e1" }
                                         TextField { id: tcpHostEdit; text: "127.0.0.1"; Layout.fillWidth: true }
                                         Label { text: "端口"; color: "#cbd5e1" }
                                         SpinBox { id: tcpPortSpin; value: 8855; from: 1; to: 65535; Layout.fillWidth: true }
-                                        Label { text: "超时 (s)"; color: "#cbd5e1" }
+                                        Label { text: "超时"; color: "#cbd5e1" }
                                         TextField { id: tcpTimeoutEdit; text: "2.0"; Layout.fillWidth: true }
                                     }
                                     RowLayout {
                                         Button {
-                                            text: "启动本地模拟桥"
+                                            text: "启动模拟"
                                             Layout.fillWidth: true
                                             enabled: !AppModel.isSimRunning && !AppModel.isBusy
                                             onClicked: AppModel.startSimulator("127.0.0.1", tcpPortSpin.value)
@@ -192,8 +193,8 @@ ApplicationWindow {
                                 // 3: Bluetooth
                                 GridLayout {
                                     columns: 2
-                                    rowSpacing: 8
-                                    Label { text: "虚拟串口"; color: "#cbd5e1" }
+                                    rowSpacing: 6
+                                    Label { text: "蓝牙口"; color: "#cbd5e1" }
                                     ComboBox {
                                         id: btPortEdit
                                         editable: true
@@ -204,19 +205,19 @@ ApplicationWindow {
                                             if (pressed) model = AppModel.getSerialPorts()
                                         }
                                     }
-                                    Label { text: "波特率"; color: "#cbd5e1" }
+                                    Label { text: "波特"; color: "#cbd5e1" }
                                     SpinBox { id: btBaudSpin; value: 115200; from: 1200; to: 921600; stepSize: 9600; Layout.fillWidth: true }
-                                    Label { text: "超时 (s)"; color: "#cbd5e1" }
+                                    Label { text: "超时"; color: "#cbd5e1" }
                                     TextField { id: btTimeoutEdit; text: "2.0"; Layout.fillWidth: true }
                                 }
 
                                 // 4: FT4232H MPSSE
                                 GridLayout {
                                     columns: 2
-                                    rowSpacing: 8
-                                    Label { text: "引脚接法"; color: "#cbd5e1" }
-                                    Label { text: "将 SCL 接在 ADBUS0，SDA 接在 ADBUS1+2(短接)"; color: "#94a3b8"; font.pixelSize: 12 }
-                                    Label { text: "设备 URL"; color: "#cbd5e1" }
+                                    rowSpacing: 6
+                                    Label { text: "接线"; color: "#cbd5e1" }
+                                    Label { text: "SCL->ADBUS0, SDA->ADBUS1+2"; color: "#94a3b8"; font.pixelSize: 11 }
+                                    Label { text: "URL"; color: "#cbd5e1" }
                                     TextField { id: ftdiUrlEdit; text: "ftdi://ftdi:4232/1"; Layout.fillWidth: true }
                                 }
                             }
@@ -225,7 +226,7 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 CheckBox {
                                     id: autoPollCheck
-                                    text: "自动轮询"
+                                    text: "轮询"
                                     checked: true
                                     onCheckedChanged: {
                                         if (AppModel.isConnected) {
@@ -234,7 +235,7 @@ ApplicationWindow {
                                     }
                                 }
                                 Item { Layout.fillWidth: true }
-                                Label { text: "间隔(s)"; color: "#cbd5e1" }
+                                Label { text: "周期"; color: "#cbd5e1" }
                                 TextField {
                                     id: pollIntervalEdit
                                     text: "1.0"
@@ -250,7 +251,7 @@ ApplicationWindow {
                             RowLayout {
                                 Layout.fillWidth: true
                                 Button {
-                                    text: "连接链路"
+                                    text: "连接"
                                     Layout.fillWidth: true
                                     enabled: !AppModel.isConnected && !AppModel.isBusy
                                     onClicked: {
@@ -282,8 +283,9 @@ ApplicationWindow {
 
                     // Quick Actions Group
                     Rectangle {
+                        visible: false
                         Layout.fillWidth: true
-                        Layout.preferredHeight: actionsCol.implicitHeight + 24
+                        Layout.preferredHeight: 0
                         color: "#0f172a"
                         radius: 8
                         border.color: "#334155"
@@ -465,10 +467,12 @@ ApplicationWindow {
                                 model: window.sectionNamesList
                                 TabButton {
                                     text: modelData
-                                    width: implicitWidth + 20
+                                    width: tabBar.width / Math.max(1, window.sectionNamesList.length)
                                     contentItem: Text {
                                         text: parent.text
                                         color: parent.checked ? "white" : "#94a3b8"
+                                        elide: Text.ElideRight
+                                        font.pixelSize: 12
                                         horizontalAlignment: Text.AlignHCenter
                                         verticalAlignment: Text.AlignVCenter
                                     }
